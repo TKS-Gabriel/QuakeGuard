@@ -57,11 +57,11 @@
     </div>
   </footer>
 
-  <!-- Firebase and JS -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-    import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
-
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+  <script>
+    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyBpHoDXXy45udzD0vKPZX9appNHlhRhX84",
       authDomain: "quakeguard-6f15c.firebaseapp.com",
@@ -72,9 +72,11 @@
       appId: "1:387814435077:web:994483c11ea089f2d16f6c"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
+    // Send Alert to Firebase
     function sendAlert(type, impactLevel, magnitude, population, deaths, duration) {
       const alertData = {
         type,
@@ -86,19 +88,17 @@
         timestamp: new Date().toISOString(),
       };
 
-      const alertRef = ref(db, "alerts");
-      push(alertRef, alertData).then(() => {
-        alert(`${impactLevel} Impact ${type} Alert Sent!`);
-      }).catch((error) => {
-        console.error("Error sending alert:", error);
-      });
+      db.ref("alerts").push(alertData)
+        .then(() => alert(`${impactLevel} Impact ${type} Alert Sent!`))
+        .catch((error) => console.error("Error sending alert:", error));
     }
 
+    // Fetch Alerts and Display Them
     function fetchAlerts() {
-      const alertsRef = ref(db, "alerts");
+      const alertsRef = db.ref("alerts");
       const alertsList = document.getElementById("alertsList");
 
-      onValue(alertsRef, (snapshot) => {
+      alertsRef.on("value", (snapshot) => {
         alertsList.innerHTML = "";
         const data = snapshot.val();
 
@@ -126,6 +126,7 @@
       });
     }
 
+    // Fetch alerts on page load
     fetchAlerts();
   </script>
 </body>
