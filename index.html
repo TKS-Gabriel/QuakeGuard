@@ -1,120 +1,42 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>Emergency Preparedness - Earthquake Simulation</title>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    />
-    <style>
-      #map {
-        height: 100vh;
-      }
-      body {
-        margin: 0;
-        font-family: Arial, sans-serif;
-      }
-      .info-box {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        background: white;
-        padding: 10px;
-        border-radius: 5px;
-        z-index: 1000;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-      }
-      .simulate-button {
-        margin-top: 10px;
-        padding: 10px;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-      }
-      .simulate-button:hover {
-        background-color: #0056b3;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="info-box">
-      <h2>Emergency Preparedness</h2>
-      <p>Simulate an earthquake and see what to do!</p>
-      <button class="simulate-button" onclick="simulateEarthquake()">Simulate Earthquake</button>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuakeGuard</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+  <style>
+    #map { height: 400px; margin: 20px 0; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+    .container { max-width: 800px; margin: auto; }
+    .header { text-align: center; }
+    .info-box { background: #f9f9f9; padding: 10px; border: 1px solid #ddd; margin-top: 10px; border-radius: 5px; }
+    button { margin: 10px; padding: 10px 15px; cursor: pointer; border: none; border-radius: 5px; background: #007bff; color: white; }
+    button:hover { background: #0056b3; }
+  </style>
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>QuakeGuard</h1>
+      <p>Interactive Emergency Preparedness and Earthquake Simulation Tool</p>
     </div>
     <div id="map"></div>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-      // Initialize the map
-      const map = L.map("map").setView([37.7749, -122.4194], 10); // Centered on San Francisco
-
-      // Add OpenStreetMap tiles
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      }).addTo(map);
-
-      // Earthquake simulation data
-      const earthquake = {
-        lat: 37.7749,
-        lng: -122.4194,
-        magnitude: 6.5,
-        impactRadius: 30, // in kilometers
-      };
-
-      // Function to simulate an earthquake
-      function simulateEarthquake() {
-        // Add a circle to represent the impact radius
-        const earthquakeCircle = L.circle([earthquake.lat, earthquake.lng], {
-          color: "red",
-          fillColor: "#f03",
-          fillOpacity: 0.5,
-          radius: earthquake.impactRadius * 1000, // Convert km to meters
-        }).addTo(map);
-
-        // Add a marker at the earthquake's epicenter
-        const earthquakeMarker = L.marker([earthquake.lat, earthquake.lng])
-          .addTo(map)
-          .bindPopup(`<b>Earthquake Detected!</b><br>Magnitude: ${earthquake.magnitude}`)
-          .openPopup();
-
-        // Display emergency instructions
-        alert(
-          "Earthquake Simulation:\n\nMagnitude: " +
-            earthquake.magnitude +
-            "\nImpact Radius: " +
-            earthquake.impactRadius +
-            " km\n\nInstructions:\n1. Drop, cover, and hold on.\n2. Stay away from windows.\n3. Move to an open area if outside.\n4. Listen to emergency broadcasts for updates."
-        );
-
-        // Adjust the map view to fit the impact radius
-        map.fitBounds(earthquakeCircle.getBounds());
-      }
-
-      // Geolocation to show the user's location
-      if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const userLatLng = [
-              position.coords.latitude,
-              position.coords.longitude,
-            ];
-            L.marker(userLatLng)
-              .addTo(map)
-              .bindPopup("You are here.")
-              .openPopup();
-          },
-          (err) => {
-            console.error("Error retrieving location:", err);
-          }
-        );
-      }
-    </script>
-  </body>
+    <div class="info-box">
+      <h3>Emergency Checklist:</h3>
+      <ul id="checklist">
+        <li><input type="checkbox"> Water (3-day supply)</li>
+        <li><input type="checkbox"> Non-perishable food</li>
+        <li><input type="checkbox"> First aid kit</li>
+        <li><input type="checkbox"> Flashlight and batteries</li>
+        <li><input type="checkbox"> Emergency contact list</li>
+      </ul>
+    </div>
+    <button id="simulate">Simulate Earthquake</button>
+    <button id="show-safe-zones">Show Safe Zones</button>
+    <div class="info-box" id="message-box"></div>
+  </div>
+  <script src="app.js"></script>
+</body>
 </html>
