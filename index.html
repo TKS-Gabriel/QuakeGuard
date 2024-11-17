@@ -66,10 +66,10 @@
   </div>
 
   <script>
-    let map, userMarker, userLocation = { lat: 20, lng: 0 }; // Default location
+    let map, userMarker, userLocation;
 
     async function initializeMap() {
-      map = L.map('map').setView([userLocation.lat, userLocation.lng], 2);
+      map = L.map('map').setView([20, 0], 2); // Default view before fetching location
 
       // Add OpenStreetMap tile layer
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -77,30 +77,27 @@
         attribution: '© OpenStreetMap contributors',
       }).addTo(map);
 
-      // Try to fetch user location
-      getUserLocation();
+      // Fetch user's location
+      await getUserLocation();
     }
 
-    function getUserLocation() {
+    async function getUserLocation() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
             const { latitude, longitude } = position.coords;
             userLocation = { lat: latitude, lng: longitude };
-            map.setView([latitude, longitude], 12);
-            userMarker = L.marker([latitude, longitude])
-              .addTo(map)
-              .bindPopup("You are here!")
-              .openPopup();
+            console.log("Geolocation fetched:", userLocation);
+            updateMap(userLocation, "You are here!");
           },
-          () => {
-            alert("Location access denied. Using fallback location.");
-            useFallbackLocation();
+          async () => {
+            console.warn("Geolocation denied. Using fallback location.");
+            await useFallbackLocation();
           }
         );
       } else {
-        alert("Geolocation not supported. Using fallback location.");
-        useFallbackLocation();
+        console.warn("Geolocation not supported. Using fallback location.");
+        await useFallbackLocation();
       }
     }
 
@@ -109,17 +106,29 @@
         const response = await fetch("http://ip-api.com/json/");
         const data = await response.json();
         userLocation = { lat: data.lat, lng: data.lon };
-        map.setView([data.lat, data.lon], 12);
-        userMarker = L.marker([data.lat, data.lon])
-          .addTo(map)
-          .bindPopup("Approximate location based on IP")
-          .openPopup();
+        console.log("Fallback location fetched:", userLocation);
+        updateMap(userLocation, "Approximate location based on IP");
       } catch (error) {
-        alert("Unable to fetch fallback location. Please try again later.");
+        console.error("Unable to fetch fallback location:", error);
+        alert("Unable to determine your location. Please try again later.");
       }
     }
 
+    function updateMap(location, popupText) {
+      map.setView([location.lat, location.lng], 12);
+      if (userMarker) map.removeLayer(userMarker); // Remove old marker if exists
+      userMarker = L.marker([location.lat, location.lng])
+        .addTo(map)
+        .bindPopup(popupText)
+        .openPopup();
+    }
+
     function simulateDisaster(type) {
+      if (!userLocation) {
+        alert("Unable to fetch your location. Please enable location services.");
+        return;
+      }
+
       let disasterDetails = "";
       let duration = Math.floor(Math.random() * 5) + 1; // Random duration (1-5 days)
       let dailyNeeds = calculateSurvivalNeeds(duration);
@@ -129,7 +138,7 @@
           disasterDetails = `
             <strong>Type:</strong> Earthquake<br>
             <strong>Location:</strong> (${userLocation.lat.toFixed(2)}, ${userLocation.lng.toFixed(2)})<br>
-            <strong>Magnitude:</strong> ${Math.random() * (7 - 4) + 4} Richter Scale<br>
+            <strong>Magnitude:</strong> ${(Math.random() * (7 - 4) + 4).toFixed(1)} Richter Scale<br>
             <strong>Duration:</strong> ${duration} days<br>
             <strong>Recommended Supplies:</strong> ${dailyNeeds}.
           `;
@@ -138,7 +147,7 @@
           disasterDetails = `
             <strong>Type:</strong> Flood<br>
             <strong>Location:</strong> (${userLocation.lat.toFixed(2)}, ${userLocation.lng.toFixed(2)})<br>
-            <strong>Water Level Rise:</strong> ${Math.random() * (5 - 1) + 1} meters<br>
+            <strong>Water Level Rise:</strong> ${(Math.random() * (5 - 1) + 1).toFixed(1)} meters<br>
             <strong>Duration:</strong> ${duration} days<br>
             <strong>Recommended Supplies:</strong> ${dailyNeeds}.
           `;
