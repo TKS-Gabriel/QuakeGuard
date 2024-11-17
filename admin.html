@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuakeGuard Admin Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <!-- Header -->
+  <header class="bg-blue-600 text-white py-6 shadow-md">
+    <div class="container mx-auto flex justify-between items-center">
+      <h1 class="text-3xl font-bold">QuakeGuard Admin Dashboard</h1>
+      <p class="text-sm">Quickly trigger and simulate emergency events.</p>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <div class="container mx-auto py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Disaster Buttons -->
+      <div class="bg-white shadow-lg rounded-lg p-6">
+        <h2 class="text-2xl font-bold mb-4">Trigger Disaster Scenarios</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <button class="w-full bg-red-500 text-white py-3 rounded hover:bg-red-600 font-bold" onclick="sendAlert('Earthquake', 'High', 6, 10000, 200, 5)">
+            High Impact Earthquake
+          </button>
+          <button class="w-full bg-blue-500 text-white py-3 rounded hover:bg-blue-600 font-bold" onclick="sendAlert('Flood', 'Medium', null, 15000, 100, 3)">
+            Medium Impact Flood
+          </button>
+          <button class="w-full bg-orange-500 text-white py-3 rounded hover:bg-orange-600 font-bold" onclick="sendAlert('Hurricane', 'Severe', null, 20000, 500, 7)">
+            Severe Hurricane
+          </button>
+          <button class="w-full bg-yellow-500 text-white py-3 rounded hover:bg-yellow-600 font-bold" onclick="sendAlert('Earthquake', 'Low', 4, 5000, 50, 2)">
+            Low Impact Earthquake
+          </button>
+        </div>
+      </div>
+
+      <!-- Alerts Overview -->
+      <div class="bg-white shadow-lg rounded-lg p-6">
+        <h2 class="text-2xl font-bold mb-4">Active Alerts</h2>
+        <ul id="alertsList" class="space-y-4">
+          <li class="bg-gray-50 p-4 rounded shadow">
+            <h3 class="font-semibold text-lg">No active alerts</h3>
+            <p class="text-sm text-gray-600">Trigger a new alert using the buttons.</p>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white py-4 mt-6">
+    <div class="container mx-auto text-center">
+      <p>&copy; 2024 QuakeGuard. Be prepared. Stay safe.</p>
+    </div>
+  </footer>
+
+  <!-- Firebase and JS -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBpHoDXXy45udzD0vKPZX9appNHlhRhX84",
+      authDomain: "quakeguard-6f15c.firebaseapp.com",
+      databaseURL: "https://quakeguard-6f15c-default-rtdb.firebaseio.com",
+      projectId: "quakeguard-6f15c",
+      storageBucket: "quakeguard-6f15c.firebaseapp.com",
+      messagingSenderId: "387814435077",
+      appId: "1:387814435077:web:994483c11ea089f2d16f6c"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    function sendAlert(type, impactLevel, magnitude, population, deaths, duration) {
+      const alertData = {
+        type,
+        impactLevel,
+        magnitude: magnitude || "N/A",
+        population,
+        deaths,
+        duration,
+        timestamp: new Date().toISOString(),
+      };
+
+      const alertRef = ref(db, "alerts");
+      push(alertRef, alertData).then(() => {
+        alert(`${impactLevel} Impact ${type} Alert Sent!`);
+      }).catch((error) => {
+        console.error("Error sending alert:", error);
+      });
+    }
+
+    function fetchAlerts() {
+      const alertsRef = ref(db, "alerts");
+      const alertsList = document.getElementById("alertsList");
+
+      onValue(alertsRef, (snapshot) => {
+        alertsList.innerHTML = "";
+        const data = snapshot.val();
+
+        if (data) {
+          Object.values(data).forEach((alert) => {
+            const li = document.createElement("li");
+            li.className = "bg-gray-50 p-4 rounded shadow";
+            li.innerHTML = `
+              <h3 class="font-semibold text-lg">${alert.type} (${alert.impactLevel} Impact)</h3>
+              <p class="text-sm text-gray-600"><strong>Population:</strong> ${alert.population}</p>
+              <p class="text-sm text-gray-600"><strong>Estimated Deaths:</strong> ${alert.deaths}</p>
+              <p class="text-sm text-gray-600"><strong>Duration:</strong> ${alert.duration} days</p>
+              <p class="text-sm text-gray-600"><strong>Timestamp:</strong> ${new Date(alert.timestamp).toLocaleString()}</p>
+            `;
+            alertsList.appendChild(li);
+          });
+        } else {
+          alertsList.innerHTML = `
+            <li class="bg-gray-50 p-4 rounded shadow">
+              <h3 class="font-semibold text-lg">No active alerts</h3>
+              <p class="text-sm text-gray-600">Trigger a new alert using the buttons.</p>
+            </li>
+          `;
+        }
+      });
+    }
+
+    fetchAlerts();
+  </script>
+</body>
+</html>
