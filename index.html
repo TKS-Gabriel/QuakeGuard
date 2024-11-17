@@ -3,40 +3,180 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QuakeGuard</title>
+  <title>LifeSaver Emergency Simulator</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
   <style>
-    #map { height: 400px; margin: 20px 0; }
-    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
-    .container { max-width: 800px; margin: auto; }
-    .header { text-align: center; }
-    .info-box { background: #f9f9f9; padding: 10px; border: 1px solid #ddd; margin-top: 10px; border-radius: 5px; }
-    button { margin: 10px; padding: 10px 15px; cursor: pointer; border: none; border-radius: 5px; background: #007bff; color: white; }
-    button:hover { background: #0056b3; }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      margin: 20px 0;
+    }
+    #map {
+      height: 60vh;
+      width: 90%;
+      margin: 10px auto;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    .button-container {
+      margin: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .info {
+      margin-top: 20px;
+      font-size: 14px;
+      text-align: left;
+      width: 90%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .info h3 {
+      margin: 10px 0;
+    }
   </style>
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <h1>QuakeGuard</h1>
-      <p>Interactive Emergency Preparedness and Earthquake Simulation Tool</p>
-    </div>
-    <div id="map"></div>
-    <div class="info-box">
-      <h3>Emergency Checklist:</h3>
-      <ul id="checklist">
-        <li><input type="checkbox"> Water (3-day supply)</li>
-        <li><input type="checkbox"> Non-perishable food</li>
-        <li><input type="checkbox"> First aid kit</li>
-        <li><input type="checkbox"> Flashlight and batteries</li>
-        <li><input type="checkbox"> Emergency contact list</li>
-      </ul>
-    </div>
-    <button id="simulate">Simulate Earthquake</button>
-    <button id="show-safe-zones">Show Safe Zones</button>
-    <div class="info-box" id="message-box"></div>
+  <h1>LifeSaver Emergency Simulator</h1>
+  <p>Locate yourself, simulate disasters, and get survival tips.</p>
+  <div id="map"></div>
+  <div class="button-container">
+    <button onclick="simulateDisaster('earthquake')">Simulate Earthquake</button>
+    <button onclick="simulateDisaster('flood')">Simulate Flood</button>
+    <button onclick="simulateDisaster('hurricane')">Simulate Hurricane</button>
   </div>
-  <script src="app.js"></script>
+  <div class="info" id="info">
+    <h3>Disaster Information</h3>
+    <p id="disaster-details">Click a button to simulate a disaster and get survival tips.</p>
+  </div>
+
+  <script>
+    let map, userMarker, userLocation = { lat: 20, lng: 0 }; // Default location
+
+    async function initializeMap() {
+      map = L.map('map').setView([userLocation.lat, userLocation.lng], 2);
+
+      // Add OpenStreetMap tile layer
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors',
+      }).addTo(map);
+
+      // Try to fetch user location
+      getUserLocation();
+    }
+
+    function getUserLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            userLocation = { lat: latitude, lng: longitude };
+            map.setView([latitude, longitude], 12);
+            userMarker = L.marker([latitude, longitude])
+              .addTo(map)
+              .bindPopup("You are here!")
+              .openPopup();
+          },
+          () => {
+            alert("Location access denied. Using fallback location.");
+            useFallbackLocation();
+          }
+        );
+      } else {
+        alert("Geolocation not supported. Using fallback location.");
+        useFallbackLocation();
+      }
+    }
+
+    async function useFallbackLocation() {
+      try {
+        const response = await fetch("http://ip-api.com/json/");
+        const data = await response.json();
+        userLocation = { lat: data.lat, lng: data.lon };
+        map.setView([data.lat, data.lon], 12);
+        userMarker = L.marker([data.lat, data.lon])
+          .addTo(map)
+          .bindPopup("Approximate location based on IP")
+          .openPopup();
+      } catch (error) {
+        alert("Unable to fetch fallback location. Please try again later.");
+      }
+    }
+
+    function simulateDisaster(type) {
+      let disasterDetails = "";
+      let duration = Math.floor(Math.random() * 5) + 1; // Random duration (1-5 days)
+      let dailyNeeds = calculateSurvivalNeeds(duration);
+
+      switch (type) {
+        case 'earthquake':
+          disasterDetails = `
+            <strong>Type:</strong> Earthquake<br>
+            <strong>Location:</strong> (${userLocation.lat.toFixed(2)}, ${userLocation.lng.toFixed(2)})<br>
+            <strong>Magnitude:</strong> ${Math.random() * (7 - 4) + 4} Richter Scale<br>
+            <strong>Duration:</strong> ${duration} days<br>
+            <strong>Recommended Supplies:</strong> ${dailyNeeds}.
+          `;
+          break;
+        case 'flood':
+          disasterDetails = `
+            <strong>Type:</strong> Flood<br>
+            <strong>Location:</strong> (${userLocation.lat.toFixed(2)}, ${userLocation.lng.toFixed(2)})<br>
+            <strong>Water Level Rise:</strong> ${Math.random() * (5 - 1) + 1} meters<br>
+            <strong>Duration:</strong> ${duration} days<br>
+            <strong>Recommended Supplies:</strong> ${dailyNeeds}.
+          `;
+          break;
+        case 'hurricane':
+          disasterDetails = `
+            <strong>Type:</strong> Hurricane<br>
+            <strong>Location:</strong> (${userLocation.lat.toFixed(2)}, ${userLocation.lng.toFixed(2)})<br>
+            <strong>Category:</strong> ${Math.floor(Math.random() * 5) + 1}<br>
+            <strong>Duration:</strong> ${duration} days<br>
+            <strong>Recommended Supplies:</strong> ${dailyNeeds}.
+          `;
+          break;
+        default:
+          return;
+      }
+
+      L.circle([userLocation.lat, userLocation.lng], {
+        color: type === 'earthquake' ? 'red' : type === 'flood' ? 'blue' : 'orange',
+        fillColor: type === 'earthquake' ? 'red' : type === 'flood' ? 'blue' : 'orange',
+        fillOpacity: 0.5,
+        radius: 5000,
+      })
+        .addTo(map)
+        .bindPopup(`Simulated ${type.charAt(0).toUpperCase() + type.slice(1)}`)
+        .openPopup();
+
+      document.getElementById("disaster-details").innerHTML = disasterDetails;
+    }
+
+    function calculateSurvivalNeeds(days) {
+      const water = (days * 3).toFixed(1); // Liters (3L per person/day)
+      const food = days * 2; // Meals (2 meals per day)
+      return `${water} liters of water and ${food} meals.`;
+    }
+
+    // Initialize map on page load
+    window.onload = initializeMap;
+  </script>
 </body>
 </html>
